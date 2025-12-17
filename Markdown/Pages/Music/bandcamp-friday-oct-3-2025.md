@@ -33,6 +33,6 @@ The choice to have "just a second !" as a b-side is an interesting one! If it wa
 ## Final Thoughts
 Wow music can make me feel a bit emotional, lol. Between old stuff that I've listened to on loop before and new things inciting all new feelings, I'm pretty damn happy with my collection so far and what I've added to it.
 ---
-Title: Bandcamp Friday - Oct 3rd 25
+Title: Bandcamp Friday
 Timestamp: 10-03-2025
 Keywords: Music, Bandcamp Friday

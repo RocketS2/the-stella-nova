@@ -5,3 +5,4 @@ base.html
 *.gitignore
 README.md
 *.*.*
+.git

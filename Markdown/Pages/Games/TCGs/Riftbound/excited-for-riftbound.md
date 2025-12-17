@@ -1,5 +1,5 @@
 ## Halloween's Going to be Fun!
-So Riftbound is a new TCG based off the game League of Legends, and I am so incredibly hype. I'm not a League fan, mind you, the game's just that cool. I heard about the rules sometime early to mid 2025 (this is being written the week before it releases on Halloween 2025), and played it with folks at my local game store when the demo decks come in. And let me tell you, I've only gottne more excited each time I've played.
+So Riftbound is a new TCG based off the game League of Legends, and I am so incredibly hype. I'm not a League fan, mind you, the game's just that cool. I heard about the rules sometime early to mid 2025 (this is being written the week before it releases on Halloween 2025), and played it with folks at my local game store when the demo decks come in. And let me tell you, I've only gotten more excited each time I've played.
 
 ## What's The Deal?
 So you're probably wondering what makes Riftbound so great, including for someone like me who hasn't played League or watched Arcane. First off, it's different! While a lot (and I mean *a lot*) of TCGs are about taking down your opponent or their partners to win, Riftbound isn't! Instead, you have to take and hold control of different battlefields to earn points. This is a fun difference, and I am always down to shake things up.

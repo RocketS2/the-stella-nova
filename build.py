@@ -1,7 +1,9 @@
 from re import search, fullmatch, DOTALL, finditer, sub
-from os import scandir, mkdir
+from os import scandir, mkdir, path
 from shutil import rmtree
 from datetime import datetime, MINYEAR
+
+THEMES = ["", "stylus"]
 
 class Page:
 
@@ -12,24 +14,34 @@ class Page:
 		self.title = tags["Title"] if "Title" in tags.keys() else name
 		self.timestamp = datetime.strptime(tags["Timestamp"], "%m-%d-%Y") if "Timestamp" in tags.keys() else datetime(year=MINYEAR, month=1, day=1)
 
+		depth = self.name.count("/")-1
+
 		self.styles = tags["Styles"] if "Styles" in tags.keys() else None
 		if(self.styles):
 			styles_index = content.index('<link rel="stylesheet"')
 			content = content[:styles_index] + f'<link rel="stylesheet" href="{self.styles}">\n\t\t' + content[styles_index:]
+		content = sub(r'<link rel="stylesheet" href="(.+)">', f'<link rel="stylesheet" href="{"../"*depth}\\g<1>">', content)
 
-		self.body_class = tags["Class"] if "Class" in tags.keys() else None
-		if(self.body_class):
-			content = content.replace("<body>", f'<body class="{self.body_class}">')
+		self.theme = tags["Theme"]
 
-		depth = self.name.count("/")-1
-		content = sub(r'href="(?!https:\/\/)(.+)">',f'href="{"../"*depth}\\g<1>">', content)
+		self.body_class = tags["Class"]+" "+self.theme if "Class" in tags.keys() else self.theme
+		content = content.replace("<body>", f'<body class="{self.body_class}">')
+
+		content = sub(r'href="(?!https:\/\/)(.+)(?<!\.css)">',f'href="{self.theme}{"/" if len(self.theme)>0 else ""}{"../"*depth}\\g<1>">', content)
 		self.content = content.replace("<title></title>",f"<title>{self.title} - Stella's Observatory</title>")
+
+		if(len(self.theme)>0):
+			theme_list_items = list(f'<li><a href="{sub(f'{self.theme}/(.*)',f"{"../"*depth}{theme}{"/" if len(theme)>0 else ""}\\g<1>",self.link)}">{theme.title() if len(theme)>0 else "Stellar"}</a></li>' for theme in THEMES)
+		else:
+			theme_list_items = list(f'<li><a href="{"../"*depth}{theme}{"/" if len(theme)>0 else ""}{self.link}">{theme.title() if len(theme)>0 else "Stellar"}</a></li>' for theme in THEMES)
+
+		self.content = sub(r'<nav aria-label="Theme"></nav>', f'<nav aria-label="Theme">\n\t\t\t\t<ul>\n\t\t\t\t\t{"\n\t\t\t\t\t".join(theme_list_items)}\n\t\t\t\t</ul>\n\t\t\t</nav>', self.content)
 
 		self.keywords = tags["Keywords"].split(", ") if "Keywords" in tags.keys() else []
 		self.navigation = tags["Navigation"] if "Navigation" in tags.keys() else None
 
 		first_paragraph = search(r"<p>(.+?)<\/p>", self.content, DOTALL)
-		PREVIEW_LENGTH = 100
+		PREVIEW_LENGTH = 500
 		first_paragraph = sub(r"(?:<.+?>)|\t|\n", "", first_paragraph.group(1)) if first_paragraph!=None else ""
 		if(len(first_paragraph)<=PREVIEW_LENGTH):
 			self.preview = first_paragraph
@@ -107,7 +119,7 @@ def parseLine(path: str, line: str, num_tabs = base_num_tabs) -> str:
 		for subpath in preview_match_groups[:-1]:
 			for page in getPages(path+subpath, int(preview_match_groups[-1])):
 				keywords = f"".join(list(f"\n{"\t"*(num_tabs+2)}<small>{keyword}</small>" for keyword in page.keywords))
-				lines.append(f'<blockquote>\n{"\t"*(num_tabs+1)}<strong><a href="{page.link}">{page.title}</a></strong>\n{"\t"*(num_tabs+1)}<p>\n{"\t"*(num_tabs+2)}{page.preview}\n{"\t"*(num_tabs+1)}</p>\n{"\t"*(num_tabs+1)}<footer class="keywords">{keywords}\n{"\t"*(num_tabs+1)}</footer>\n{"\t"*num_tabs}</blockquote>')
+				lines.append(f'<blockquote>\n{"\t"*(num_tabs+1)}<strong>{page.title} - {page.timestamp.strftime("%b %d %y")}</strong>\n{"\t"*(num_tabs+1)}<p>\n{"\t"*(num_tabs+2)}{page.preview}\n{"\t"*(num_tabs+1)}</p>\n{"\t"*(num_tabs+1)}<p><a href="{page.link}">Read more...</a></p>\n{"\t"*(num_tabs+1)}<footer class="keywords">{keywords}\n{"\t"*(num_tabs+1)}</footer>\n{"\t"*num_tabs}</blockquote>')
 		line = f"\n{"\t"*num_tabs}".join(lines)
 
 	# Images
@@ -184,14 +196,19 @@ def convertMarkdownToHtml(name: str) -> None:
 		new_text = base_text[:base_insert_index]+file_text+base_text[base_insert_index:]
 		subNav = getSubNav(file_tags["Navigation"]) if "Navigation" in file_tags.keys() else ""
 		new_text_with_header_subnav = new_text[:base_header_insert_index]+subNav+new_text[base_header_insert_index:]
-		file_footer_start = search(r"\n(\t*)<footer>", new_text_with_header_subnav)
-		file_footer_insert_index = file_footer_start.end(0)
-		new_text_with_footer_subnav = new_text_with_header_subnav[:file_footer_insert_index]+subNav+new_text_with_header_subnav[file_footer_insert_index:]
-		new_page = Page(name, new_text_with_footer_subnav, file_tags)
-		with open(new_page.link, "w") as new_file:
-			new_file.write(new_page.content)
-		
-		pages.append(new_page)
+
+		base_name  = name
+
+		for theme in THEMES:
+			name = f"{theme}{"/" if len(theme)>0 else ""}{base_name}"
+			file_tags["Theme"] = theme
+			# file_tags["Class"] = f'{base_tags["Class"]} {theme}' if "Class" in base_tags.keys() else theme
+
+			new_page = Page(name, new_text_with_header_subnav, file_tags)
+			with open(new_page.link, "w") as new_file:
+				new_file.write(new_page.content)
+			
+			pages.append(new_page)
 
 def convertInDirectory(path: str) -> None:
 	"""Converts all the markdown files in the directory and subdirectories to html"""
@@ -202,9 +219,15 @@ def convertInDirectory(path: str) -> None:
 				convertMarkdownToHtml(f"{entry.path[:-3]}")
 			# Search within folders
 			elif(entry.is_dir):
-				mkdir(entry.path.replace("Markdown/",""))
+				for theme in THEMES:
+					mkdir(f'{theme}{"/" if len(theme)>0 else ""}{entry.path.replace("Markdown/","")}')
 				convertInDirectory(entry.path)
 
-
 rmtree("Pages")
+
+for theme in THEMES:
+	if(len(theme)>0):
+		if(path.exists(theme)):
+			rmtree(theme)
+		mkdir(theme)
 convertInDirectory("Markdown")
