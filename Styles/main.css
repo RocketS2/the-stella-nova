@@ -1,0 +1,72 @@
+/* Overhead */
+@font-face {
+	font-family: "West End Knights";
+	src: url("../Fonts/West\ End\ Knights.woff");
+}
+
+@font-face {
+	font-family: "Figure Things";
+	src: url("../Fonts/Figure\ Things.otf");
+}
+
+:root {
+	--color-primary: rgb(0, 0, 58);
+	--color-on-primary: white;
+}
+
+/* Main */
+html {
+	font-family: "Figure Things", "Lucida Console", "Monaco", monospace;
+	font-size: 20px;
+	letter-spacing: 1px;
+}
+
+body {
+	background-image: url("../Images/Background.png");
+	background-attachment: fixed;
+	color: white;
+}
+
+main > * {
+	background-color: var(--color-primary);
+	color: var(--color-on-primary);
+	width: 80%;
+	padding-right: 25px;
+	padding-left: 25px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	margin: auto;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	border-radius: 25px;
+	line-height: 1.5rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	background-color: black;
+	font-family: "West End Knights", "Figure Things", "Lucida Console", "Monaco", monospace;
+}
+
+a {
+	color: rgb(245, 252, 158);
+}
+
+a:visited {
+	color: rgb(248, 226, 122);
+}
+
+nav {
+	background-color: rgb(47, 1, 45);
+}
+
+nav li {
+	margin: auto;
+}
+
+nav a, nav a:visited {
+	color: rgb(245, 252, 158);
+	background: none;
+	border: none;
+	font: inherit;
+	cursor: pointer;
+}

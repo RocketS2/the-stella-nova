@@ -1,0 +1,4 @@
+# Op-Ex, Or: I Like TCGs
+It feels weird to truly call this a project, with how little I've done for it, but I think writing my thoughts on it would be useful/fun and this is essentially the digital diary I forgot about for a bit (woops).
+
+So, to start, we don't even start with the name. We start before that, with me idly thinking about taking all the things I have strong TCG opinions about and going "hey, I'll just make something!" I started writing down things to include, then stopped  myself. It's sloppy, aimless. I needed a *goal.* And so, I wrote down pros and cons (moreso things I do or don't like) about different TCGs.

@@ -1,0 +1,7 @@
+.vscode
+*.py
+Markdown
+base.html
+.gitignore
+README.md
+*.*.*
