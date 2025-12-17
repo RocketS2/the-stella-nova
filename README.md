@@ -42,6 +42,6 @@ Title is the used for the page's title element and displayed in previews. Date i
 To include a tag, on the line below the three dashes, include `Name: Value`. So for the home page, it would have `Title: Home`.
 
 ## Uploading
-This site makes use of the neocities cli to upload. Login on the command line, then use `neocities push --prune .`. This will upload the files here and delete the files that don't match on the site. Personally, I prefer to include --dry-run the first time to see what would happen without actually doing so.
+This site makes use of the neocities cli to upload. Login on the command line, rename .gitignore to something.gitignore and neocities.gitignore to .gitignore, then use `neocities push --prune .`. This will upload the files here and delete the files that don't match on the site. Personally, I prefer to include --dry-run the first time to see what would happen without actually doing so.
 
 For files that don't need to be on the site, such as the Markdown or build.py, .gitignore is used. Any names of folders or files there won't be included in the upload.
