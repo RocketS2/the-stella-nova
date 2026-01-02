@@ -177,6 +177,9 @@ def parseLine(path: str, line: str, num_tabs = base_num_tabs) -> str:
 	# Code
 	line = sub(r"`(.+)`", r"<code>\g<1></code>", line)
 
+	# Strikethrough
+	line = sub(r"~~(.+)~~", r"<s>\g<1></s>", line)
+
 	return line
 
 def convertMarkdownToHtml(name: str) -> None:
