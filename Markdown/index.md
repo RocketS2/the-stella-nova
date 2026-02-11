@@ -6,6 +6,8 @@ While I don't make a lot of personal posts elsewhere, I am on [Bluesky](https://
 This site's a work in progress! I plan on adding more to it with time, so feel free to check back!
 
 I've recently (like December '25) restructured the site some! Leaning into the whole "I don't wanna post on social media and I have a neocities subscription" thing, the main bit of the site's now the [feed](./feed.html)! Now, instead of trying to categorize all the updates on here into their own pages with essentially their own feeds, there's a one place for them! Also, post previews have been adjusted to feel a little more like social media posts. Fit the vibe, and all.
+
+Even more recently (Feb '26) I added the [writing section](./writing.html)! It's the hub for my writing projects and such, and I plan to add a good bit of stuff with time.
 ---
 Title: Home
 Timestamp: 09-26-2025
