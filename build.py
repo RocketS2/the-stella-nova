@@ -93,8 +93,7 @@ def convertFile(path: Path) -> None:
 		new_content = new_content[:feed.start()] + getPreviews(feed.group(1), int(feed.group(2))) + new_content[feed.end():]
 
 	depth = path.as_posix().count("/")-1
-	new_content = sub(r'href="(?!http)(.+)"', f'href="{"../"*depth}\\1"', new_content)
-
+	new_content = sub(r'(src|href)="(?!http)(.+)"', f'\\1="{"../"*depth}\\2"', new_content)
 
 	new_path = renamePath(path).replace(".md", ".html")
 	pages.append(Page(new_path, new_content, details))
