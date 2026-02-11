@@ -22,7 +22,7 @@ body {
 	background-attachment: fixed;
 }
 
-body.stylus {
+body[data-theme="stylus"] {
 	background-image: url("../Images/Background_Stylus.png");
 }
 
@@ -30,7 +30,7 @@ main > :not(hr, blockquote, .image-group, h1, h2, h3, h4, h5, h6), .keywords > *
 	background-color: rgb(0, 0, 58);
 }
 
-.stylus > main > :not(hr, blockquote, .image-group, h1, h2, h3, h4, h5, h6), .stylus .keywords > * {
+[data-theme="stylus"] > main > :not(hr, blockquote, .image-group, h1, h2, h3, h4, h5, h6), [data-theme="stylus"] .keywords > * {
 	background-color: rgb(51.8% 29.9% 38.9%);
 }
 
@@ -55,7 +55,7 @@ main > :not(hr), footer > :not(.site-title), header, nav {
 	border-radius: 25px;
 }
 
-.stylus > main > :not(hr), footer > :not(.site-title) {
+[data-theme="stylus"] > main > :not(hr), footer > :not(.site-title) {
 	color: rgb(100% 96.8% 93.3%);
 }
 
@@ -77,7 +77,7 @@ header {
 	background-color: rgb(47, 1, 45);
 }
 
-.stylus header {
+[data-theme="stylus"] header {
 	background-color: rgb(70, 108, 64);
 }
 
@@ -121,7 +121,7 @@ blockquote, .image-group {
 	background-color: rgb(0, 52, 66);
 }
 
-.stylus blockquote, .stylus .image-group {
+[data-theme="stylus"] blockquote, [data-theme="stylus"] .image-group {
 	background-color: rgb(35, 105, 132);
 }
 
@@ -144,7 +144,7 @@ hr {
 	width: 80%;
 }
 
-.stylus hr {
+[data-theme="stylus"] hr {
 	border-top-color: rgb(132, 76, 99);
 }
 
