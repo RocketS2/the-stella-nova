@@ -22,6 +22,11 @@ class Page:
 				first_content = " ".join(first_words)
 			preview+=f"<p>{first_content}</p>"
 
+		if("Keywords" in self.details.keys()):
+			keywords = self.details["Keywords"].split(", ")
+			keywords = "".join(list(f"<small>{keyword}</small>" for keyword in keywords))
+			preview += f'<footer class="keywords">{keywords}</footer>'
+
 		preview += "</blockquote>"
 		self.preview = preview
 
