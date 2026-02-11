@@ -53,6 +53,7 @@ def convertFile(path: Path) -> None:
 	# List of markdown/html pairs
 	tags = [
 		(r"^\n", r""), # Empty Line
+		(r"^--$", r"<hr />"), # Horizontal Rule
 		(r"#{6} (.+)", r"<h6>\1</h6>"), # Heading 6
 		(r"#{5} (.+)", r"<h5>\1</h5>"), # Heading 5
 		(r"#{4} (.+)", r"<h4>\1</h4>"), # Heading 4
