@@ -138,12 +138,14 @@ code, .credits {
 /* Horizontal Rule */
 hr {
 	border: none;
-	border-top: 3px dotted rgb(0, 0, 58);
+	border-top-style: dotted;
+	border-top-width: 9px;
+	border-top-color: rgb(0, 0, 58);
 	width: 80%;
 }
 
 .stylus hr {
-	border-top: 3px dotted rgb(51.8% 29.9% 38.9%);
+	border-top-color: rgb(132, 76, 99);
 }
 
 /* Horizontal image groups */
