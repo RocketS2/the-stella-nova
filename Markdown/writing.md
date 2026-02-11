@@ -7,5 +7,5 @@ Made for me to have a go-to settings, Academy Apartments is an urban fantasy thi
 ## Writing Pages
 < Pages/Writing 0
 ---
-Title: Home
+Title: Writing
 Timestamp: 02-11-2026
