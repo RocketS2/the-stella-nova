@@ -1,236 +1,118 @@
-from re import search, fullmatch, DOTALL, finditer, sub
-from os import scandir, mkdir, path
-from shutil import rmtree
-from datetime import datetime, MINYEAR
-
-THEMES = ["", "stylus"]
+from pathlib import Path
+from re import sub, MULTILINE, fullmatch, finditer, search
+from datetime import datetime
 
 class Page:
+	def __init__(self, path: str, content: str, details: dict):
+		self.path = path
+		self.content = content
+		self.details = details
+		self.timestamp = datetime.strptime(self.details["Timestamp"], "%m-%d-%Y")
 
-	def __init__(self, name: str, content: str, tags: dict):
-		self.name = name
-		self.link = f"{self.name.replace("Markdown/","")}.html"
-		self.tags = tags
-		self.title = tags["Title"] if "Title" in tags.keys() else name
-		self.timestamp = datetime.strptime(tags["Timestamp"], "%m-%d-%Y") if "Timestamp" in tags.keys() else datetime(year=MINYEAR, month=1, day=1)
+		preview = "<blockquote>"
+		preview += f'<strong><a href="{self.path}">{self.details["Title"]} - {self.timestamp.strftime("%b %d %y")}</a></strong>'
 
-		depth = self.name.count("/")-1
-
-		self.styles = tags["Styles"] if "Styles" in tags.keys() else None
-		if(self.styles):
-			styles_index = content.index('<link rel="stylesheet"')
-			content = content[:styles_index] + f'<link rel="stylesheet" href="{self.styles}">\n\t\t' + content[styles_index:]
-		content = sub(r'<link rel="stylesheet" href="(.+)">', f'<link rel="stylesheet" href="{"../"*depth}\\g<1>">', content)
-
-		self.theme = tags["Theme"]
-
-		self.body_class = tags["Class"]+" "+self.theme if "Class" in tags.keys() else self.theme
-		content = content.replace("<body>", f'<body class="{self.body_class}">')
-
-		content = sub(r'href="(?!https:\/\/)(.+)(?<!\.css)">',f'href="{self.theme}{"/" if len(self.theme)>0 else ""}{"../"*depth}\\g<1>">', content)
-		self.content = content.replace("<title></title>",f"<title>{self.title} - Stella's Observatory</title>")
-
-		if(len(self.theme)>0):
-			theme_list_items = list(f'<li><a href="{sub(f'{self.theme}/(.*)',f"{"../"*depth}{theme}{"/" if len(theme)>0 else ""}\\g<1>",self.link)}">{theme.title() if len(theme)>0 else "Stellar"}</a></li>' for theme in THEMES)
-		else:
-			theme_list_items = list(f'<li><a href="{"../"*depth}{theme}{"/" if len(theme)>0 else ""}{self.link}">{theme.title() if len(theme)>0 else "Stellar"}</a></li>' for theme in THEMES)
-
-		self.content = sub(r'<nav aria-label="Theme"></nav>', f'<nav aria-label="Theme">\n\t\t\t\t<ul>\n\t\t\t\t\t{"\n\t\t\t\t\t".join(theme_list_items)}\n\t\t\t\t</ul>\n\t\t\t</nav>', self.content)
-
-		self.keywords = tags["Keywords"].split(", ") if "Keywords" in tags.keys() else []
-		self.navigation = tags["Navigation"] if "Navigation" in tags.keys() else None
-
-		first_paragraph = search(r"<p>(.+?)<\/p>", self.content, DOTALL)
+		first_paragraph = search("<p>(.+)</p>",self.content)
 		PREVIEW_LENGTH = 500
-		first_paragraph = sub(r"(?:<.+?>)|\t|\n", "", first_paragraph.group(1)) if first_paragraph!=None else ""
-		if(len(first_paragraph)<=PREVIEW_LENGTH):
-			self.preview = first_paragraph
-		else:
-			words = first_paragraph.split(" ")
-			preview_words = []
-			for word in words:
-				preview_words.append(word)
-				if(len(" ".join(preview_words))>PREVIEW_LENGTH):
-					preview_words.pop()
-					break
-			self.preview = " ".join(preview_words)+"..."
+		if(first_paragraph):
+			first_content = first_paragraph.group(1)
+			first_words = first_content.split(" ")
+			while(len(first_content)>PREVIEW_LENGTH):
+				first_words.pop()
+				first_content = " ".join(first_words)
+			preview+=f"<p>{first_content}</p>"
 
-	def __lt__(self, other) -> bool:
-		return self.timestamp<other.timestamp
-		
+		preview += "</blockquote>"
+		self.preview = preview
 
-pages: list[Page] = []
-
-def getPages(path: str, number: int) -> list[Page]:
-	found_pages = list(page for page in pages if page.name.startswith(path) and "/." not in page.name)
-	
-	found_pages.sort(reverse=True)
-
-	if(number==0):
-		return found_pages
-
-	return found_pages[:number]
-
-def getSubNav(path):
-	pages_to_link = list(page for page in pages if fullmatch(f".*{path}\\/[^\\/]+",page.name))
-	if(len(pages_to_link)==0):
-		return ""
-	links = "".join(list(f'\n{"\t"*(base_num_tabs+2)}<li><a href="{page.link}">{page.title}</a></li>' for page in pages_to_link))
-	return f'\n{"\t"*base_num_tabs}<nav aria-label="{path}">\n{"\t"*(base_num_tabs+1)}<ul>{links}\n{"\t"*(base_num_tabs+1)}</ul>\n{"\t"*base_num_tabs}</nav>'
-
-# Get base file to work from
 with open("base.html") as base_file:
 	base_text = base_file.read()
 
-	base_file_body_end = search(r"\n(\t*)<\/main>", base_text)
+def renamePath(path: Path) -> str:
+	return path.as_posix().replace("Markdown/","")
 
-	base_num_tabs = base_file_body_end.group(1).count("\t")+1
-	base_insert_index = base_file_body_end.start(0)
+pages: list[Page] = []
 
-	base_file_header_end = search(r"\n(\t*)<\/header>", base_text)
-	base_header_insert_index = base_file_header_end.start(0)
+def getPreviews(dir: str, number: int) -> str:
+	global pages
+	applicable_pages = list(page for page in pages if dir in page.path)
+	applicable_pages.sort(key=lambda x: x.timestamp, reverse=True)
+	if(number!=0):
+		applicable_pages = applicable_pages[:number]
 
-def parseLine(path: str, line: str, num_tabs = base_num_tabs) -> str:
-	"""Turns a markdown line into html"""
+	return "\n\n".join(list(page.preview for page in applicable_pages))
 
-	if(len(line)==0):
-		return line
-	
-	## Entire line encapsulation
+# Turns file into html
+def convertFile(path: Path) -> None:
+	global pages
+	# List of markdown/html pairs
+	tags = [
+		(r"^\n", r""), # Empty Line
+		(r"#{6} (.+)", r"<h6>\1</h6>"), # Heading 6
+		(r"#{5} (.+)", r"<h5>\1</h5>"), # Heading 5
+		(r"#{4} (.+)", r"<h4>\1</h4>"), # Heading 4
+		(r"#{3} (.+)", r"<h3>\1</h3>"), # Heading 3
+		(r"#{2} (.+)", r"<h2>\1</h2>"), # Heading 2
+		(r"#{1} (.+)", r"<h1>\1</h1>"), # Heading 1
+		(r"^> (.+)", r"<blockquote>\1</blockquote>"), # Blockquote
+		(r'!\[([^\]]+)\]\(([^\)]+) "([^\)]+)"\)', r'<figure><img src="\2" alt="\1"/><figcaption>\3</figcaption></figure>'), # Image
+		(r"(<figure>.+<\/figure>)", r'<div class="image-group">\1</div>'), # Image group
+		(r"\|\|([^|]+)\|\|\(([^\)]+)\)", r"<details><summary>\2</summary>\1</details>"), # Summary
+		(r"^([^<].*)", r"<p>\1</p>"), # Paragraph
 
-	# Heading
-	heading_match = fullmatch(r"(#+) (.+)", line)
-	if(heading_match):
-		heading_count = heading_match.group(1).count("#")
-		if(heading_count>6):
-			raise Exception("Only headings up to h6 supported!")
-		line = f"<h{heading_count}>{heading_match.group(2)}</h{heading_count}>"
+		(r"\[([^\]]+)\]\(([^\)]+)\)", r'<a href="\2">\1</a>'), # Links
+		(r"\*{3}([^*]+)\*{3}", r"<strong><em>\1</em></strong>"), # Bold italics
+		(r"\*{2}([^*]+)\*{2}", r"<strong>\1</strong>"), # Bold
+		(r"\*{1}([^*]+)\*{1}", r"<em>\1</em>"), # Italics
+		(r"~~([^~]+)~~", r"<s>\1</s>"), # Strikethrough
+		(r"\\n", "<br>"), # Line Break
+		(r"`([^`]+)`", r"<code>\1</code>") # Code Block
+	]
+	with open(path, "r") as file:
+		content = file.read().split("---\n")
+		new_content = content[0]
 
-	# Block Quote
-	blockquote_match = fullmatch(r"> (.+)", line, DOTALL)
-	if(blockquote_match):
-		line = f"<blockquote>\n{"\t"*(num_tabs+1)}{blockquote_match.group(1)}\n{"\t"*num_tabs}</blockquote>"
+	for tag in tags:
+		new_content = sub(tag[0], tag[1], new_content, flags=MULTILINE)
+	new_content = "\t\t\t"+"\n\t\t\t".join(new_content.splitlines())
+	new_content = sub("<main>\n", f"<main>\n{new_content}", base_text)
 
-	# Preview
-	preview_match = fullmatch(r"< (?:([^,]+?), )*(.+) (\d+)", line)
-	if(preview_match):
-		lines = []
-		preview_match_groups = list(x for x in preview_match.groups() if x!=None)
-		for subpath in preview_match_groups[:-1]:
-			for page in getPages(path+subpath, int(preview_match_groups[-1])):
-				keywords = f"".join(list(f"\n{"\t"*(num_tabs+2)}<small>{keyword}</small>" for keyword in page.keywords))
-				lines.append(f'<blockquote>\n{"\t"*(num_tabs+1)}<strong>{page.title} - {page.timestamp.strftime("%b %d %y")}</strong>\n{"\t"*(num_tabs+1)}<p>\n{"\t"*(num_tabs+2)}{page.preview}\n{"\t"*(num_tabs+1)}</p>\n{"\t"*(num_tabs+1)}<p><a href="{page.link}">Read more...</a></p>\n{"\t"*(num_tabs+1)}<footer class="keywords">{keywords}\n{"\t"*(num_tabs+1)}</footer>\n{"\t"*num_tabs}</blockquote>')
-		line = f"\n{"\t"*num_tabs}".join(lines)
+	details = {}
+	for detail in content[1].split("\n"):
+		tag_match = fullmatch(r"(.+?): (.+)", detail)
+		details[tag_match.group(1)] = tag_match.group(2)
+	new_content = sub("<title>", f"<title>{details['Title']} - Stella's Observatory", new_content)
 
-	# Images
-	image_group_match = fullmatch(r'(!\[([^\]]+)\]\(([^\)]+?)(?: "([^\)]+)")?\))+', line)
-	if(image_group_match):
-		lines = []
-		for image_match in finditer(r'!\[([^\]]+)\]\(([^\)]+?)(?: "([^\)]+)")?\)', line):
-			lines.append(f'<figure>\n{"\t"*(num_tabs+2)}<img src="{image_match.group(2)}" alt="{image_match.group(1)}"/>{'\n'+"\t"*(num_tabs+2)+'<figcaption>'+image_match.group(3)+'</figcaption>' if image_match.group(3) else ''}\n{"\t"*(num_tabs+1)}</figure>')
-		line = f'<div class="image-group">\n{"\t"*(num_tabs+1)}'+f"\n{"\t"*(num_tabs+1)}".join(lines)+f'\n{"\t"*num_tabs}</div>'
+	for feed in finditer(r"< (.+) (\d+)", new_content):
+		new_content = new_content[:feed.start()] + getPreviews(feed.group(1), int(feed.group(2))) + new_content[feed.end():]
 
-	# Spoilers
-	spoiler_group_match = fullmatch(r'\|\|(.+)\|\|\((.+)\)', line)
-	if(spoiler_group_match):
-		line = f'<details>\n{"\t"*(num_tabs+2)}<summary>{spoiler_group_match.group(2)}</summary>\n{"\t"*(num_tabs+2)}{spoiler_group_match.group(1)}\n{"\t"*num_tabs}</details>'
+	depth = path.as_posix().count("/")-1
+	new_content = sub(r'href="(?!http)(.+)"', f'href="{"../"*depth}\\1"', new_content)
 
-	# Classes
-	class_group_match = fullmatch(r'\/(.+)\/\((.+)\)', line)
-	if(class_group_match):
-		line = f'<p class="{class_group_match.group(2)}">\n{"\t"*(num_tabs+1)}{class_group_match.group(1)}\n{"\t"*num_tabs}</p>'
 
-	# Paragraph (if none of the above applied)
-	if(not fullmatch(r"(?:\t*<(.+).*>.+<\/\1>)|(?:<hr>)", line, DOTALL)):
-		line = f"<p>\n{"\t"*(num_tabs+1)}{line}\n{"\t"*num_tabs}</p>"
+	new_path = renamePath(path).replace(".md", ".html")
+	pages.append(Page(new_path, new_content, details))
 
-	## Within line encapsulation
+	with open(new_path, "w") as new_file:
+		new_file.write(new_content)
 
-	# Italics and Bold
-	bold_italics_matches = finditer(r"(\*+)(.+?)(\1)", line)
-	for bold_italics_match in bold_italics_matches:
-		replacement_text = ""
-		match bold_italics_match.group(1).count("*"):
+# Convert directories inside, then files
+def convertDirectory(dir: str|Path) -> None:
+	path = Path(dir)
+	for entry in sorted(path.iterdir(), key=lambda x: x.is_file()):
+		if(entry.is_dir()):
+			new_path = renamePath(entry)
+			if(new_path!="Pages"):
+				Path(new_path).mkdir()
+			convertDirectory(entry)
+		elif(entry.suffix==".md"):
+			convertFile(entry)
 
-			# Italics
-			case 1:
-				replacement_text = f"<em>{bold_italics_match.group(2)}</em>"
+# Empty out HTML folder
+for root, dirs, files in Path("Pages").walk(top_down=False):
+		for name in files:
+			(root / name).unlink()
+		for name in dirs:
+			(root / name).rmdir()
 
-			# Bold
-			case 2:
-				replacement_text = f"<strong>{bold_italics_match.group(2)}</strong>"
-
-			# Both
-			case 3:
-				replacement_text = f"<strong><em>{bold_italics_match.group(2)}</em></strong>"
-			
-			case _:
-				raise Exception("Only up to 3 asterisks supported!")
-			
-		line = line.replace(bold_italics_match.group(0), replacement_text)
-
-	# Links
-	line = sub(r"\[([^\]]+)\]\(([^\)]+)\)", r'<a href="\g<2>">\g<1></a>', line)
-
-	line = line.replace("\\n", "<br>")
-
-	# Code
-	line = sub(r"`(.+)`", r"<code>\g<1></code>", line)
-
-	# Strikethrough
-	line = sub(r"~~(.+)~~", r"<s>\g<1></s>", line)
-
-	return line
-
-def convertMarkdownToHtml(name: str) -> None:
-	"""Converts a markdown file (name.md) into an html file (name.html) using the base template"""
-	path = fullmatch(r"((?:.+\/)+).+",name).group(1)
-	with open(f"{name}.md") as file:
-		file_lines = file.read().split("\n")
-		file_split_index = file_lines.index("---")
-
-		file_tags = {}
-		for line in file_lines[file_split_index+1:]:
-			tag_match = fullmatch("(.+?): (.+)", line)
-			file_tags[tag_match.group(1)] = tag_match.group(2)
-
-		file_content_lines = list("\t"*base_num_tabs+parseLine(path, line) for line in file_lines[:file_split_index])
-		file_text = "\n".join(file_content_lines)
-		new_text = base_text[:base_insert_index]+file_text+base_text[base_insert_index:]
-		subNav = getSubNav(file_tags["Navigation"]) if "Navigation" in file_tags.keys() else ""
-		new_text_with_header_subnav = new_text[:base_header_insert_index]+subNav+new_text[base_header_insert_index:]
-
-		base_name  = name
-
-		for theme in THEMES:
-			name = f"{theme}{"/" if len(theme)>0 else ""}{base_name}"
-			file_tags["Theme"] = theme
-			# file_tags["Class"] = f'{base_tags["Class"]} {theme}' if "Class" in base_tags.keys() else theme
-
-			new_page = Page(name, new_text_with_header_subnav, file_tags)
-			with open(new_page.link, "w") as new_file:
-				new_file.write(new_page.content)
-			
-			pages.append(new_page)
-
-def convertInDirectory(path: str) -> None:
-	"""Converts all the markdown files in the directory and subdirectories to html"""
-	with scandir(path) as entries:
-		for entry in sorted(entries, key=lambda x: x.is_file()):
-			# Convert Markdown files
-			if entry.name.endswith(".md"):
-				convertMarkdownToHtml(f"{entry.path[:-3]}")
-			# Search within folders
-			elif(entry.is_dir):
-				for theme in THEMES:
-					mkdir(f'{theme}{"/" if len(theme)>0 else ""}{entry.path.replace("Markdown/","")}')
-				convertInDirectory(entry.path)
-
-rmtree("Pages")
-
-for theme in THEMES:
-	if(len(theme)>0):
-		if(path.exists(theme)):
-			rmtree(theme)
-		mkdir(theme)
-convertInDirectory("Markdown")
+convertDirectory("Markdown")
