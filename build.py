@@ -8,6 +8,7 @@ class Page:
 		self.content = content
 		self.details = details
 		self.timestamp = datetime.strptime(self.details["Timestamp"], "%m-%d-%Y")
+		self.order = 0 if "Order" not in self.details.keys() else int(self.details["Order"])
 
 		preview = "<blockquote>"
 		preview += f'<strong><a href="{self.path}">{self.details["Title"]} - {self.timestamp.strftime("%b %d %y")}</a></strong>'
@@ -41,7 +42,7 @@ pages: list[Page] = []
 def getPreviews(dir: str, number: int) -> str:
 	global pages
 	applicable_pages = list(page for page in pages if dir in page.path)
-	applicable_pages.sort(key=lambda x: x.timestamp, reverse=True)
+	applicable_pages.sort(key=lambda x: (x.timestamp, x.order), reverse=True)
 	if(number!=0):
 		applicable_pages = applicable_pages[:number]
 
