@@ -39,10 +39,10 @@ def renamePath(path: Path) -> str:
 
 pages: list[Page] = []
 
-def getPreviews(dir: str, number: int) -> str:
+def getPreviews(dir: str, number: int, reverse: bool=True) -> str:
 	global pages
 	applicable_pages = list(page for page in pages if dir in page.path)
-	applicable_pages.sort(key=lambda x: (x.timestamp, x.order), reverse=True)
+	applicable_pages.sort(key=lambda x: (x.timestamp, x.order), reverse=reverse)
 	if(number!=0):
 		applicable_pages = applicable_pages[:number]
 
@@ -90,8 +90,8 @@ def convertFile(path: Path) -> None:
 		details[tag_match.group(1)] = tag_match.group(2)
 	new_content = sub("<title>", f"<title>{details['Title']} - Stella's Observatory", new_content)
 
-	for feed in finditer(r"< (.+) (\d+)", new_content):
-		new_content = new_content[:feed.start()] + getPreviews(feed.group(1), int(feed.group(2))) + new_content[feed.end():]
+	for feed in finditer(r"<(<?) (.+) (\d+)", new_content):
+		new_content = new_content[:feed.start()] + getPreviews(feed.group(2), int(feed.group(3)), not bool(len(feed.group(1)))) + new_content[feed.end():]
 
 	depth = path.as_posix().count("/")-1
 	new_content = sub(r'(src|href)="(?!http)(.+)"', f'\\1="{"../"*depth}\\2"', new_content)
