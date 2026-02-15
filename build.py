@@ -1,5 +1,5 @@
 from pathlib import Path
-from re import sub, MULTILINE, fullmatch, finditer, search
+from re import sub, MULTILINE, fullmatch, finditer, search, compile
 from datetime import datetime
 
 class Page:
@@ -32,7 +32,8 @@ class Page:
 		self.preview = preview
 
 with open("base.html") as base_file:
-	base_text = base_file.read()
+	BASE_TEXT = base_file.read()
+BASE_TABS = len(search(r"(\t+)<main>", BASE_TEXT).group(1))+1
 
 def renamePath(path: Path) -> str:
 	return path.as_posix().replace("Markdown/","")
@@ -46,7 +47,7 @@ def getPreviews(dir: str, number: int, reverse: bool=True) -> str:
 	if(number!=0):
 		applicable_pages = applicable_pages[:number]
 
-	return "\n\n".join(list(page.preview for page in applicable_pages))
+	return "\n".join(list(page.preview for page in applicable_pages))
 
 # Turns file into html
 def convertFile(path: Path) -> None:
@@ -81,8 +82,6 @@ def convertFile(path: Path) -> None:
 
 	for tag in tags:
 		new_content = sub(tag[0], tag[1], new_content, flags=MULTILINE)
-	new_content = "\t\t\t"+"\n\t\t\t".join(new_content.splitlines())
-	new_content = sub("<main>\n", f"<main>\n{new_content}", base_text)
 
 	details = {}
 	for detail in content[1].split("\n"):
@@ -92,6 +91,26 @@ def convertFile(path: Path) -> None:
 
 	for feed in finditer(r"<(<?) (.+) (\d+)", new_content):
 		new_content = new_content[:feed.start()] + getPreviews(feed.group(2), int(feed.group(3)), not bool(len(feed.group(1)))) + new_content[feed.end():]
+
+	new_content = new_content.replace("\n", "")
+
+	tabs = BASE_TABS
+	pattern = compile(r"<(/?).+?>")
+	tag_match = pattern.search(new_content)
+	while(tag_match):
+		if(len(tag_match.group(1))):
+			tabs-=1
+			new_content = new_content[:tag_match.start()] + "\n" + "\t"*tabs + new_content[tag_match.start():]
+			pos = tag_match.end() + tabs + 1
+		else:
+			new_content = new_content[:tag_match.start()] + "\n" + "\t"*tabs + new_content[tag_match.start():tag_match.end()] + "\n" + "\t"*(tabs+1) + new_content[tag_match.end():]
+			pos = tag_match.end() + 2*tabs + 3
+			tabs+=1
+		tag_match = pattern.search(new_content, pos)
+
+	new_content = sub(r"\t+\n", "", new_content)
+
+	new_content = sub("<main>\n", f"<main>\n{new_content}\n", BASE_TEXT)
 
 	depth = path.as_posix().count("/")-1
 	new_content = sub(r'(src|href)="(?!http)(.+)"', f'\\1="{"../"*depth}\\2"', new_content)
