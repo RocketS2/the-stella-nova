@@ -13,10 +13,10 @@ class Page:
 		preview = "<blockquote>"
 		preview += f'<strong><a href="{self.path}">{self.details["Title"]} - {self.timestamp.strftime("%b %d %y")}</a></strong>'
 
-		first_paragraph = search("<p>(.+)</p>",self.content)
+		first_paragraph = search(r"<p>([\s\S]+?)<\/p>",self.content)
 		PREVIEW_LENGTH = 500
 		if(first_paragraph):
-			first_content = first_paragraph.group(1)
+			first_content = first_paragraph.group(1).replace("\n", "").replace("\t", "")
 			first_words = first_content.split(" ")
 			while(len(first_content)>PREVIEW_LENGTH):
 				first_words.pop()
