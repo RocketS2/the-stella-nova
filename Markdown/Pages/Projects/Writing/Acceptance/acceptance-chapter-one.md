@@ -40,7 +40,7 @@ I walk with her. It feels like hours, and I can feel the folds of the wooden flo
 
 "Think about that dream. You have to accept it."
 
-"You don't know what that means!" It's hard to whisper when I want to scream, but I want to manage. Accept *what?* A sword that isn't real? There won't be a sword in the bathroom to protect us.
+"You don't know what that means!" It's hard to whisper when I want to scream, but I manage. Accept *what?* A sword that isn't real? There won't be a sword in the bathroom to protect us.
 
 "We have to try and find out." She doesn't even wait for me to respond, opening the door. I step forward like a woman possessed. Everything inside me says not to do this, and yet I'm here.
 
